@@ -4,47 +4,45 @@ const useSocketio = true;
 let socket = null;
 
 const SignalingChannelSocketio = {
-	init() {
+	init: () => {
 		//socket = io('http://35.229.222.96:3000');
 		socket = io('https://vvk954yznl.sse.codesandbox.io/');
 		socket.on('connect', () => console.log('connect'));
 	},
 
-	send(data) {
+	send: (data) => {
 		socket.emit('x', JSON.stringify(data));
 	},
 
-	receive(callback) {
+	receive: (callback) => {
 		socket.on('x', (data) => callback(data));
 	}
 };
 
 const SignalingChannelFirebase = {
-	init() {
+	init: () => {
 
 	},
 
-	send(data) {
+	send: (data) => {
 
 	},
 
-	receive(callback) {
+	receive: (callback) => {
 
 	}
 };
 
-const SignalingChannel = {
-	init() {
+export default {
+	init: () => {
 		(useSocketio === true) ? SignalingChannelSocketio.init() : SignalingChannelFirebase.init();
 	},
 
-	send(data) {
+	send: (data) => {
 		(useSocketio === true) ? SignalingChannelSocketio.send(data) : SignalingChannelFirebase.send(data);
 	},
 
-	receive(callback) {
+	receive: (callback) => {
 		(useSocketio === true) ? SignalingChannelSocketio.receive(callback) : SignalingChannelFirebase.receive(callback);
 	}
 };
-
-export default SignalingChannel;

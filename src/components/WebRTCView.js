@@ -1,9 +1,9 @@
-import React, { Component } from 'react';
+import React, { Component, Fragment } from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 
 import SignalingChannel from './SignalingChannel';
 
-export default class WebRTCView extends Component {
+export default class extends Component {
 	constructor(props) {
 		super(props);
 
@@ -19,14 +19,14 @@ export default class WebRTCView extends Component {
 
 	componentDidMount() {
 		SignalingChannel.init();
-		SignalingChannel.receive(this.receiveSignalData.bind(this));
+		SignalingChannel.receive(this.receiveSignalData);
 
 		this.start();
 	}
 
 	render() {
 		return (
-			<View>
+			<Fragment>
 				<View style={{ justifyContent: 'center', alignItems: 'center', marginBottom: 20 }}>
 					<Text style={{ fontSize: 20, fontWeight: 'bold' }}>WebRTC</Text>
 					<Text>{'state: ' + this.state.iceConnectionState}</Text>
@@ -41,23 +41,23 @@ export default class WebRTCView extends Component {
 				<View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center' }}>
 					<TouchableOpacity
 						style={{ backgroundColor: 'lightgray', margin: 20, padding: 10, borderRadius: 10 }}
-						onPress={this.call.bind(this)}
+						onPress={this.call}
 					>
 						<Text style={{ color: 'white' }}>{'Call'}</Text>
 					</TouchableOpacity>
 
 					<TouchableOpacity
 						style={{ backgroundColor: 'lightgray', margin: 20, padding: 10, borderRadius: 10 }}
-						onPress={this.hangup.bind(this)}
+						onPress={this.hangup}
 					>
 						<Text style={{ color: 'white' }}>{'hangup'}</Text>
 					</TouchableOpacity>
 				</View>
-			</View>
+			</Fragment>
 		);
 	}
 
-	start() {
+	start = () => {
 		const configuration = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
 
 		this.pc = new RTCPeerConnection(configuration);
@@ -87,22 +87,22 @@ export default class WebRTCView extends Component {
 
 			this.pc.addStream(stream);
 		});
-	}
+	};
 
-	async call() {
+	call = async () => {
 		const offer = await this.pc.createOffer();
 
 		await this.pc.setLocalDescription(offer);
 
 		SignalingChannel.send({ sdp: this.pc.localDescription });
-	}
+	};
 
-	async hangup() {
+	hangup = async () => {
 		this.pc.close();
 		//this.pc = null;
-	}
+	};
 
-	async receiveSignalData(data) {
+	receiveSignalData = async (data) => {
 		const msg = JSON.parse(data);
 
 		if (msg.candidate !== undefined) {
@@ -120,5 +120,5 @@ export default class WebRTCView extends Component {
 		else if (msg.sdp.type === 'answer') {
 			this.pc.setRemoteDescription(new RTCSessionDescription(msg.sdp));
 		}
-	}
+	};
 }
