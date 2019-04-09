@@ -1,9 +1,8 @@
 import io from 'socket.io-client';
 
-const useSocketio = true;
 let socket = null;
 
-const SignalingChannelSocketio = {
+export default {
 	init: () => {
 		//socket = io('http://35.229.222.96:3000');
 		socket = io('https://vvk954yznl.sse.codesandbox.io/');
@@ -16,33 +15,5 @@ const SignalingChannelSocketio = {
 
 	receive: (callback) => {
 		socket.on('x', (data) => callback(data));
-	}
-};
-
-const SignalingChannelFirebase = {
-	init: () => {
-
-	},
-
-	send: (data) => {
-
-	},
-
-	receive: (callback) => {
-
-	}
-};
-
-export default {
-	init: () => {
-		(useSocketio === true) ? SignalingChannelSocketio.init() : SignalingChannelFirebase.init();
-	},
-
-	send: (data) => {
-		(useSocketio === true) ? SignalingChannelSocketio.send(data) : SignalingChannelFirebase.send(data);
-	},
-
-	receive: (callback) => {
-		(useSocketio === true) ? SignalingChannelSocketio.receive(callback) : SignalingChannelFirebase.receive(callback);
 	}
 };
