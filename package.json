@@ -1,8 +1,7 @@
 {
-	"name": "webrtc",
+	"name": "webrtc-test",
 	"version": "0.0.1",
 	"private": true,
-	"homepage": "https://nenzon-dev.github.io/webrtc",
 	"scripts": {
 		"start": "react-scripts start",
 		"build": "react-scripts build",
@@ -29,5 +28,6 @@
 		"not dead",
 		"not ie <= 11",
 		"not op_mini all"
-	]
+	],
+	"homepage": "https://nenzon-dev.github.io/webrtc-test"
 }

@@ -1,15 +1,14 @@
 import React, { Component, Fragment } from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Button } from 'react-native';
 
-import SignalingChannel from './SignalingChannel';
+import io from 'socket.io-client';
+
+const socket = io('https://vvk954yznl.sse.codesandbox.io/');
+//socket.on('connect', () => console.log('connect'));
 
 export default class extends Component {
 	constructor(props) {
 		super(props);
-
-		this.state = {
-			iceConnectionState: '',
-		};
 
 		this.localVideo = React.createRef();
 		this.remoteVideo = React.createRef();
@@ -18,8 +17,7 @@ export default class extends Component {
 	}
 
 	componentDidMount() {
-		SignalingChannel.init();
-		SignalingChannel.receive(this.receiveSignalData);
+		socket.on('x', (data) => this.receiveData(JSON.parse(data)));
 
 		this.start();
 	}
@@ -27,31 +25,16 @@ export default class extends Component {
 	render() {
 		return (
 			<Fragment>
-				<View style={{ justifyContent: 'center', alignItems: 'center', marginBottom: 20 }}>
-					<Text style={{ fontSize: 20, fontWeight: 'bold' }}>WebRTC</Text>
-					<Text>{'state: ' + this.state.iceConnectionState}</Text>
+				<View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', margin: 10 }}>
+					<Button title='Call' onPress={this.call} />
+					<View style={{ width: 10 }} />
+					<Button title='Hangup' onPress={this.hangup} />
 				</View>
 
-				<View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center' }}>
-					<video ref={this.localVideo} width='500' autoPlay muted />
+				<View style={{ justifyContent: 'center', alignItems: 'center' }}>
+					<video ref={this.localVideo} width='300' autoPlay muted />
 
-					<video ref={this.remoteVideo} width='500' autoPlay />
-				</View>
-
-				<View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center' }}>
-					<TouchableOpacity
-						style={{ backgroundColor: 'lightgray', margin: 20, padding: 10, borderRadius: 10 }}
-						onPress={this.call}
-					>
-						<Text style={{ color: 'white' }}>{'Call'}</Text>
-					</TouchableOpacity>
-
-					<TouchableOpacity
-						style={{ backgroundColor: 'lightgray', margin: 20, padding: 10, borderRadius: 10 }}
-						onPress={this.hangup}
-					>
-						<Text style={{ color: 'white' }}>{'hangup'}</Text>
-					</TouchableOpacity>
+					<video ref={this.remoteVideo} width='300' autoPlay />
 				</View>
 			</Fragment>
 		);
@@ -62,13 +45,9 @@ export default class extends Component {
 
 		this.pc = new RTCPeerConnection(configuration);
 
-		this.setState({
-			iceConnectionState: this.pc.iceConnectionState
-		});
-
 		this.pc.onicecandidate = (event) => {
 			if (event.candidate) {
-				SignalingChannel.send({ candidate: event.candidate });
+				this.sendData({ candidate: event.candidate });
 			}
 		};
 
@@ -76,11 +55,7 @@ export default class extends Component {
 			this.remoteVideo.current.srcObject = event.stream;
 		};
 
-		this.pc.oniceconnectionstatechange = (event) => {
-			this.setState({
-				iceConnectionState: this.pc.iceConnectionState
-			});
-		};
+		//this.pc.oniceconnectionstatechange = (event) => console.log(this.pc.iceConnectionState);
 
 		navigator.mediaDevices.getUserMedia({ 'audio': true, 'video': true }).then((stream) => {
 			this.localVideo.current.srcObject = stream;
@@ -94,31 +69,35 @@ export default class extends Component {
 
 		await this.pc.setLocalDescription(offer);
 
-		SignalingChannel.send({ sdp: this.pc.localDescription });
+		this.sendData({ sdp: this.pc.localDescription });
 	};
 
 	hangup = async () => {
 		this.pc.close();
-		//this.pc = null;
+		this.pc = null;
+
+		this.start();
 	};
 
-	receiveSignalData = async (data) => {
-		const msg = JSON.parse(data);
+	sendData = async (data) => {
+		socket.emit('x', JSON.stringify(data));
+	};
 
-		if (msg.candidate !== undefined) {
-			this.pc.addIceCandidate(new RTCIceCandidate(msg.candidate));
+	receiveData = async (data) => {
+		if (data.candidate !== undefined) {
+			this.pc.addIceCandidate(new RTCIceCandidate(data.candidate));
 		}
-		else if (msg.sdp.type === 'offer') {
-			this.pc.setRemoteDescription(new RTCSessionDescription(msg.sdp));
+		else if (data.sdp.type === 'offer') {
+			this.pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
 
 			const answer = await this.pc.createAnswer();
 
 			await this.pc.setLocalDescription(answer);
 
-			SignalingChannel.send({ sdp: this.pc.localDescription });
+			this.sendData({ sdp: this.pc.localDescription });
 		}
-		else if (msg.sdp.type === 'answer') {
-			this.pc.setRemoteDescription(new RTCSessionDescription(msg.sdp));
+		else if (data.sdp.type === 'answer') {
+			this.pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
 		}
 	};
 }
