@@ -1,1 +1,0 @@
-{"version":3,"sources":["/Users/haneyume/Documents/nenzon/webrtc/src/main.css"],"names":[],"mappings":"AAIA,gBAHC,WAAa,CAMb,AAHD,MACC,qBAAc,AAAd,YAAc,CAEd","file":"main.e962e425.chunk.css","sourcesContent":["html, body {\n\theight: 100%;\n}\n\n#root {\n\tdisplay: flex;\n\theight: 100%;\n}\n"]}
