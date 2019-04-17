@@ -4,7 +4,6 @@ import { View, Button } from 'react-native';
 import io from 'socket.io-client';
 
 const socket = io('https://vvk954yznl.sse.codesandbox.io/');
-//socket.on('connect', () => console.log('connect'));
 
 export default class extends Component {
 	constructor(props) {
@@ -22,13 +21,17 @@ export default class extends Component {
 		this.start();
 	}
 
+	componentWillUnmount() {
+		socket.off('x');
+	}
+
 	render() {
 		return (
 			<Fragment>
 				<View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', margin: 10 }}>
-					<Button title='Call' onPress={this.call} />
+					<Button title={'Call'} onPress={this.call} />
 					<View style={{ width: 10 }} />
-					<Button title='Hangup' onPress={this.hangup} />
+					<Button title={'Hangup'} onPress={this.hangup} />
 				</View>
 
 				<View style={{ justifyContent: 'center', alignItems: 'center' }}>
