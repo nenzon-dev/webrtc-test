@@ -1,6 +1,5 @@
 import React, { Component, Fragment } from 'react';
 import { View, Button } from 'react-native';
-
 import io from 'socket.io-client';
 
 const socket = io('https://vvk954yznl.sse.codesandbox.io/');
@@ -16,9 +15,9 @@ export default class extends Component {
 	}
 
 	componentDidMount() {
-		socket.on('x', (data) => this.receiveData(JSON.parse(data)));
+		socket.on('webrtc', (data) => this.receiveData(JSON.parse(data)));
 
-		this.start();
+		this.initialize();
 	}
 
 	componentWillUnmount() {
@@ -28,29 +27,43 @@ export default class extends Component {
 	render() {
 		return (
 			<Fragment>
-				<View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', margin: 10 }}>
+				<View style={{ flexDirection: 'row' }}>
 					<Button title={'Call'} onPress={this.call} />
 					<View style={{ width: 10 }} />
 					<Button title={'Hangup'} onPress={this.hangup} />
 				</View>
 
-				<View style={{ justifyContent: 'center', alignItems: 'center' }}>
+				<View>
 					<video ref={this.localVideo} width='300' autoPlay muted />
-
 					<video ref={this.remoteVideo} width='300' autoPlay />
 				</View>
 			</Fragment>
 		);
 	}
 
-	start = () => {
-		const configuration = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
+	initialize = async () => {
+		const mediaConstraints = {
+			'audio': true,
+			'video': true
+		};
+
+		const configuration = {
+			'iceServers': [
+				{ 'urls': 'stun:stun.l.google.com:19302' }
+			]
+		};
+
+		const stream = await navigator.mediaDevices.getUserMedia(mediaConstraints);
+
+		this.localVideo.current.srcObject = stream;
 
 		this.pc = new RTCPeerConnection(configuration);
 
+		this.pc.addStream(stream);
+
 		this.pc.onicecandidate = (event) => {
 			if (event.candidate) {
-				this.sendData({ candidate: event.candidate });
+				this.sendData(event.candidate);
 			}
 		};
 
@@ -58,13 +71,9 @@ export default class extends Component {
 			this.remoteVideo.current.srcObject = event.stream;
 		};
 
-		//this.pc.oniceconnectionstatechange = (event) => console.log(this.pc.iceConnectionState);
-
-		navigator.mediaDevices.getUserMedia({ 'audio': true, 'video': true }).then((stream) => {
-			this.localVideo.current.srcObject = stream;
-
-			this.pc.addStream(stream);
-		});
+		this.pc.oniceconnectionstatechange = (event) => {
+			console.log(this.pc ? this.pc.iceConnectionState : '...');
+		};
 	};
 
 	call = async () => {
@@ -72,35 +81,37 @@ export default class extends Component {
 
 		await this.pc.setLocalDescription(offer);
 
-		this.sendData({ sdp: this.pc.localDescription });
+		this.sendData(offer);
 	};
 
 	hangup = async () => {
 		this.pc.close();
 		this.pc = null;
 
-		this.start();
+		this.initialize();
 	};
 
 	sendData = async (data) => {
-		socket.emit('x', JSON.stringify(data));
+		socket.emit('webrtc', JSON.stringify(data));
 	};
 
 	receiveData = async (data) => {
-		if (data.candidate !== undefined) {
-			this.pc.addIceCandidate(new RTCIceCandidate(data.candidate));
+		console.log(data);
+
+		if (data.type === undefined) {
+			this.pc.addIceCandidate(data);
 		}
-		else if (data.sdp.type === 'offer') {
-			this.pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
+		else if (data.type === 'offer') {
+			this.pc.setRemoteDescription(data);
 
 			const answer = await this.pc.createAnswer();
 
 			await this.pc.setLocalDescription(answer);
 
-			this.sendData({ sdp: this.pc.localDescription });
+			this.sendData(answer);
 		}
-		else if (data.sdp.type === 'answer') {
-			this.pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
+		else if (data.type === 'answer') {
+			this.pc.setRemoteDescription(data);
 		}
 	};
 }
