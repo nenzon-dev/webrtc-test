@@ -1,11 +1,11 @@
 {
-  "main.js": "/webrtc-test/static/js/main.7eb082fc.chunk.js",
-  "main.js.map": "/webrtc-test/static/js/main.7eb082fc.chunk.js.map",
+  "main.js": "/webrtc-test/static/js/main.21bebfe6.chunk.js",
+  "main.js.map": "/webrtc-test/static/js/main.21bebfe6.chunk.js.map",
   "runtime~main.js": "/webrtc-test/static/js/runtime~main.f6722fc6.js",
   "runtime~main.js.map": "/webrtc-test/static/js/runtime~main.f6722fc6.js.map",
-  "static/js/2.27626a94.chunk.js": "/webrtc-test/static/js/2.27626a94.chunk.js",
-  "static/js/2.27626a94.chunk.js.map": "/webrtc-test/static/js/2.27626a94.chunk.js.map",
+  "static/js/2.a39b6e6c.chunk.js": "/webrtc-test/static/js/2.a39b6e6c.chunk.js",
+  "static/js/2.a39b6e6c.chunk.js.map": "/webrtc-test/static/js/2.a39b6e6c.chunk.js.map",
   "index.html": "/webrtc-test/index.html",
-  "precache-manifest.498fa682593c0c530b8c1969376c376f.js": "/webrtc-test/precache-manifest.498fa682593c0c530b8c1969376c376f.js",
+  "precache-manifest.74a94b96d17ae12067990510060de3a0.js": "/webrtc-test/precache-manifest.74a94b96d17ae12067990510060de3a0.js",
   "service-worker.js": "/webrtc-test/service-worker.js"
 }
