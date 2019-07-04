@@ -2,14 +2,17 @@ import React from 'react';
 import { Container, Row, Button } from 'reactstrap';
 import { socket } from '../utils/sockets';
 
-//"homepage": "https://nenzon-dev.github.io/webrtc-test"
-
 export default class extends React.Component {
   constructor(props) {
     super(props);
 
+    this.state = {
+      isCalling: false
+    };
+
     this.localVideo = React.createRef();
     this.remoteVideo = React.createRef();
+    this.localStream = null;
     this.pc = null;
   }
 
@@ -25,8 +28,8 @@ export default class extends React.Component {
     return (
       <Container>
         <Row>
-          <Button color='success' onClick={this.call}>Call</Button>
-          <Button color='danger' onClick={this.hangup}>Hangup</Button>
+          {!this.state.isCalling && <Button color='success' onClick={this.call}>Call</Button>}
+          {this.state.isCalling && <Button color='danger' onClick={this.hangup}>Hangup</Button>}
         </Row>
 
         <Row>
@@ -38,11 +41,11 @@ export default class extends React.Component {
   }
 
   initialize = async () => {
-    socket.on('webrtc', (data) => this.receiveData(JSON.parse(data)));
+    socket.on('chatAudio-signaling', (data) => this.receiveData(JSON.parse(data)));
 
     const mediaConstraints = {
       'audio': true,
-      'video': true
+      'video': false
     };
 
     const pcConfiguration = {
@@ -51,17 +54,17 @@ export default class extends React.Component {
       ]
     };
 
-    const stream = await navigator.mediaDevices.getUserMedia(mediaConstraints);
+    this.localStream = await navigator.mediaDevices.getUserMedia(mediaConstraints);
 
-    this.localVideo.current.srcObject = stream;
+    this.localVideo.current.srcObject = this.localStream;
 
     this.pc = new RTCPeerConnection(pcConfiguration);
 
-    this.pc.addStream(stream);
+    this.pc.addStream(this.localStream);
 
     this.pc.onicecandidate = (event) => {
       if (event.candidate) {
-        this.sendData(event.candidate);
+        this.sendData('', event.candidate);
       }
     };
 
@@ -71,11 +74,20 @@ export default class extends React.Component {
 
     this.pc.oniceconnectionstatechange = () => {
       console.log(this.pc ? this.pc.iceConnectionState : '...');
+
+      if (!this.pc) {
+        return;
+      }
+
+      let state = this.pc.iceConnectionState;
+      if (state === 'connected' || state === 'completed') {
+        this.setState({ isCalling: true });
+      }
     };
   };
 
   uninitialize = async () => {
-    socket.off('webrtc');
+    socket.off('chatAudio-signaling');
   };
 
   call = async () => {
@@ -83,18 +95,25 @@ export default class extends React.Component {
 
     await this.pc.setLocalDescription(offer);
 
-    this.sendData(offer);
+    this.sendData('', offer);
+
+    this.setState({ isCalling: true });
   };
 
   hangup = async () => {
     this.pc.close();
     this.pc = null;
 
+    this.setState({ isCalling: false });
+
     this.initialize();
   };
 
-  sendData = async (data) => {
-    socket.emit('webrtc', JSON.stringify(data));
+  sendData = async (chatUserId, data) => {
+    socket.emit('chatAudio-signaling', {
+      chatUserId: chatUserId,
+      data: JSON.stringify(data)
+    });
   };
 
   receiveData = async (data) => {
@@ -108,7 +127,7 @@ export default class extends React.Component {
 
       await this.pc.setLocalDescription(answer);
 
-      this.sendData(answer);
+      this.sendData('', answer);
     }
     else if (data['type'] === 'answer') {
       await this.pc.setRemoteDescription(data);
